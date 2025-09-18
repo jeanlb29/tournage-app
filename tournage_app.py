@@ -69,3 +69,7 @@ if st.button("Générer fiche"):
     st.image(img, caption="Aperçu fiche")
     st.download_button(
         "📥 Télécharger la fiche en PNG",
+        buffer,
+        file_name="fiche_tournage.png",
+        mime="image/png"
+    )

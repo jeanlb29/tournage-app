@@ -1,8 +1,10 @@
 import streamlit as st
-from fpdf import FPDF
-from PIL import Image, ImageDraw, ImageFont
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
 import io
-import os
+from PIL import Image, ImageDraw, ImageFont
 
 st.set_page_config(page_title="Fiche Tournage", page_icon="🎬", layout="centered")
 
@@ -27,22 +29,31 @@ with st.form("tournage_form"):
 
     submitted = st.form_submit_button("📄 Générer fiche")
 
-# --- Fonction PDF ---
+# --- Fonction PDF avec ReportLab ---
 def generate_pdf():
-    pdf = FPDF()
-    pdf.add_page()
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
 
-    # Ajout police Unicode (DejaVuSans disponible par défaut sur beaucoup de serveurs Linux)
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    if os.path.exists(font_path):
-        pdf.add_font("DejaVu", "", font_path, uni=True)
-        pdf.set_font("DejaVu", size=12)
-    else:
-        # fallback si police absente
-        pdf.set_font("Arial", size=12)
+    # Styles personnalisés
+    title_style = ParagraphStyle(
+        "title",
+        parent=styles["Heading1"],
+        fontSize=18,
+        alignment=1,
+        textColor=colors.HexColor("#1a1a1a"),
+    )
 
-    pdf.cell(200, 10, "🎬 Fiche tournage", ln=True, align="C")
-    pdf.ln(10)
+    label_style = ParagraphStyle(
+        "label",
+        parent=styles["Normal"],
+        fontSize=11,
+        textColor=colors.HexColor("#333333"),
+        spaceAfter=6,
+    )
+
+    # Titre
+    elements = [Paragraph("🎬 Fiche Tournage", title_style), Spacer(1, 20)]
 
     infos = [
         ("Nom du tournage", nom_tournage),
@@ -60,18 +71,34 @@ def generate_pdf():
         ("Contact prod", contact),
     ]
 
-    for label, value in infos:
-        if value:  # éviter les None
-            pdf.multi_cell(0, 10, f"{label} : {value}")
+    # Tableau
+    table_data = [[f"<b>{label}</b>", value if value else ""] for label, value in infos]
+    table = Table(table_data, colWidths=[120, 350])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 11),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+            ]
+        )
+    )
 
-    return pdf.output(dest="S").encode("latin1")
+    elements.append(table)
+    doc.build(elements)
 
-# --- Fonction Image ---
+    buffer.seek(0)
+    return buffer
+
+# --- Fonction PNG (inchangée) ---
 def generate_png():
     img = Image.new("RGB", (800, 1000), "white")
     d = ImageDraw.Draw(img)
     y = 50
-
     font = ImageFont.load_default()
 
     d.text((300, 20), "🎬 Fiche tournage", fill="black", font=font)
@@ -101,9 +128,24 @@ def generate_png():
     buffer.seek(0)
     return buffer
 
-# --- Affichage des boutons ---
+# --- Affichage ---
 if submitted:
     col1, col2 = st.columns(2)
 
     with col1:
-        pdf_bytes = generate_pdf()
+        pdf_buffer = generate_pdf()
+        st.download_button(
+            "📥 Télécharger PDF",
+            data=pdf_buffer,
+            file_name="fiche_tournage.pdf",
+            mime="application/pdf",
+        )
+
+    with col2:
+        png_buffer = generate_png()
+        st.download_button(
+            "🖼 Télécharger PNG",
+            data=png_buffer,
+            file_name="fiche_tournage.png",
+            mime="image/png",
+        )

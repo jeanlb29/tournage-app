@@ -3,7 +3,6 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import os
 
-# Base directory pour localiser les icônes
 BASE_DIR = os.path.dirname(__file__)
 
 def icon_path(name):
@@ -23,7 +22,6 @@ lieu = st.text_input("Lieu")
 horaires = st.text_input("Horaires estimés")
 
 if st.button("Générer fiche"):
-    # Lignes avec icônes
     lignes = [
         ("clapper.png", f"Nom du tournage : {nom}"),
         ("building.png", f"Prod : {prod}"),
@@ -36,42 +34,38 @@ if st.button("Générer fiche"):
         ("clock.png", f"Horaires estimés : {horaires}")
     ]
 
-    # Création image blanche
+    # Image blanche
     img = Image.new("RGB", (1000, 1200), "white")
     draw = ImageDraw.Draw(img)
 
-    # Police
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", 36)
+        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 48)
     except:
         font = ImageFont.load_default()
+        title_font = font
 
     # Titre
-    draw.text((400, 40), "📋 Fiche Tournage", font=font, fill="black")
+    draw.text((300, 40), "FICHE TOURNAGE", font=title_font, fill="black")
 
-    # Écrire chaque ligne avec l’icône
+    # Lignes
     y = 120
     for icon_file, texte in lignes:
         path = icon_path(icon_file)
         if os.path.exists(path):
             try:
-                icon = Image.open(path).resize((36, 36))
-                img.paste(icon, (80, y), mask=icon)  # colle l’emoji
+                icon = Image.open(path).resize((36, 36)).convert("RGBA")
+                img.paste(icon, (80, y), mask=icon.split()[3])  # applique bien la transparence
             except Exception as e:
                 st.write(f"Erreur ouverture {icon_file} : {e}")
         draw.text((140, y), texte, font=font, fill="black")
         y += 80
 
-    # Sauvegarde en mémoire
+    # Sauvegarde
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
 
-    # Affichage + download
     st.image(img, caption="Aperçu fiche")
     st.download_button(
         "📥 Télécharger la fiche en PNG",
-        buffer,
-        file_name="fiche_tournage.png",
-        mime="image/png"
-    )

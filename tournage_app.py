@@ -1,16 +1,8 @@
 import streamlit as st
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-import os
 
-# Base directory pour localiser les icônes
-BASE_DIR = os.path.dirname(__file__)
-
-def icon_path(name):
-    return os.path.join(BASE_DIR, "icons", name)
-
-st.title("📋 Générateur de fiche tournage")
+st.title("📋 Générateur de fiche tournage (PNG)")
 
 # Formulaire
 nom = st.text_input("Nom du tournage")
@@ -24,48 +16,43 @@ lieu = st.text_input("Lieu")
 horaires = st.text_input("Horaires estimés")
 
 if st.button("Générer fiche"):
-    # Affichage Streamlit
-    st.markdown("""
-    🎬 **Nom du tournage** : {}  
-    🏢 **Prod** : {}  
-    👤 **Client** : {}  
-    📝 **Description** : {}  
-    🎥 **Poste** : {}  
-    💶 **Rémunération** : {}  
-    📅 **Dates de tournage** : {}  
-    📍 **Lieu** : {}  
-    ⏱ **Horaires estimés** : {}  
-    """.format(nom, prod, client, description, poste, remu, date, lieu, horaires))
-
-    # Création PDF
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-
+    # Texte à afficher
     lignes = [
-        (icon_path("clapper.png"), f"Nom du tournage : {nom}"),
-        (icon_path("building.png"), f"Prod : {prod}"),
-        (icon_path("person.png"), f"Client : {client}"),
-        (icon_path("page.png"), f"Description : {description}"),
-        (icon_path("camera.png"), f"Poste : {poste}"),
-        (icon_path("money.png"), f"Rémunération : {remu}"),
-        (icon_path("calendar.png"), f"Dates de tournage : {date}"),
-        (icon_path("pin.png"), f"Lieu : {lieu}"),
-        (icon_path("clock.png"), f"Horaires estimés : {horaires}")
+        f"🎬 Nom du tournage : {nom}",
+        f"🏢 Prod : {prod}",
+        f"👤 Client : {client}",
+        f"📝 Description : {description}",
+        f"🎥 Poste : {poste}",
+        f"💶 Rémunération : {remu}",
+        f"📅 Dates de tournage : {date}",
+        f"📍 Lieu : {lieu}",
+        f"⏱ Horaires estimés : {horaires}"
     ]
 
-    y = 800
-    for icon, texte in lignes:
-        if os.path.exists(icon):  # évite de planter si une icône n'existe pas
-            c.drawImage(icon, 40, y-8, width=14, height=14)
-        c.drawString(65, y, texte)
-        y -= 25
+    # Création image blanche
+    img = Image.new("RGB", (800, 1000), "white")
+    draw = ImageDraw.Draw(img)
 
-    c.save()
+    # Police (Arial ou DejaVu si dispo sur ton Streamlit Cloud)
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", 28)
+    except:
+        font = ImageFont.load_default()
+
+    y = 100
+    for ligne in lignes:
+        draw.text((80, y), ligne, font=font, fill="black")
+        y += 60
+
+    # Sauvegarde en mémoire
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
     buffer.seek(0)
 
+    st.image(img, caption="Aperçu fiche")
     st.download_button(
-        "📥 Télécharger la fiche en PDF",
+        "📥 Télécharger la fiche en PNG",
         buffer,
-        file_name="fiche_tournage.pdf",
-        mime="application/pdf"
+        file_name="fiche_tournage.png",
+        mime="image/png"
     )

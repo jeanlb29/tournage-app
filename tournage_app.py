@@ -1,12 +1,7 @@
 import streamlit as st
 from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
-
-# Charger la police emoji (fichier présent dans ton repo)
-pdfmetrics.registerFont(TTFont("Emoji", "NotoColorEmoji-Regular.ttf"))
 
 st.title("📋 Générateur de fiche tournage")
 
@@ -22,6 +17,7 @@ lieu = st.text_input("Lieu")
 horaires = st.text_input("Horaires estimés")
 
 if st.button("Générer fiche"):
+    # Affichage Streamlit (avec vrais emojis)
     st.markdown(f"""
     🎬 **Nom du tournage** : {nom}  
     🏢 **Prod** : {prod}  
@@ -34,27 +30,27 @@ if st.button("Générer fiche"):
     ⏱ **Horaires estimés** : {horaires}  
     """)
 
-    # Création PDF avec emojis
+    # Création PDF avec emojis en PNG
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
-    c.setFont("Emoji", 12)
 
     lignes = [
-        f"🎬 Nom du tournage : {nom}",
-        f"🏢 Prod : {prod}",
-        f"👤 Client : {client}",
-        f"📝 Description : {description}",
-        f"🎥 Poste : {poste}",
-        f"💶 Rémunération : {remu}",
-        f"📅 Dates de tournage : {date}",
-        f"📍 Lieu : {lieu}",
-        f"⏱ Horaires estimés : {horaires}"
+        ("icons/clapper.png", f"Nom du tournage : {nom}"),
+        ("icons/building.png", f"Prod : {prod}"),
+        ("icons/person.png", f"Client : {client}"),
+        ("icons/page.png", f"Description : {description}"),
+        ("icons/camera.png", f"Poste : {poste}"),
+        ("icons/money.png", f"Rémunération : {remu}"),
+        ("icons/calendar.png", f"Dates de tournage : {date}"),
+        ("icons/pin.png", f"Lieu : {lieu}"),
+        ("icons/clock.png", f"Horaires estimés : {horaires}")
     ]
 
     y = 800
-    for ligne in lignes:
-        c.drawString(50, y, ligne)
-        y -= 20
+    for icon, texte in lignes:
+        c.drawImage(icon, 40, y-8, width=12, height=12)  # emoji image
+        c.drawString(60, y, texte)                       # texte
+        y -= 25
 
     c.save()
     buffer.seek(0)

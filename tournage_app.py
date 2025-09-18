@@ -23,34 +23,36 @@ horaires = st.text_input("Horaires estimés")
 
 if st.button("✨ Générer fiche"):
     lignes = [
-        ("clapper.png", f"Nom du tournage : {nom}"),
-        ("building.png", f"Prod : {prod}"),
-        ("person.png", f"Client : {client}"),
-        ("page.png", f"Description : {description}"),
-        ("camera.png", f"Poste : {poste}"),
-        ("money.png", f"Rémunération : {remu}"),
-        ("calendar.png", f"Dates de tournage : {date}"),
-        ("pin.png", f"Lieu : {lieu}"),
-        ("clock.png", f"Horaires estimés : {horaires}")
+        ("clapper.png", "Nom du tournage", nom),
+        ("building.png", "Prod", prod),
+        ("person.png", "Client", client),
+        ("page.png", "Description", description),
+        ("camera.png", "Poste", poste),
+        ("money.png", "Rémunération", remu),
+        ("calendar.png", "Dates de tournage", date),
+        ("pin.png", "Lieu", lieu),
+        ("clock.png", "Horaires estimés", horaires)
     ]
 
     # --- Dimensions image ---
-    width, height = 1080, 1350
-    img = Image.new("RGB", (width, height), "#f5f5f5")  # fond gris clair
+    width, height = 1080, 1400
+    img = Image.new("RGB", (width, height), "#f5f5f7")  # fond Apple gris clair
     draw = ImageDraw.Draw(img)
 
     # --- Carte blanche ---
-    margin = 60
+    margin = 80
     card_x0, card_y0 = margin, margin
     card_x1, card_y1 = width - margin, height - margin
     card = Image.new("RGB", (card_x1 - card_x0, card_y1 - card_y0), "white")
 
     # Police Montserrat
     try:
-        font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Regular.ttf"), 36)
-        title_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 56)
+        font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Regular.ttf"), 38)
+        label_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 38)
+        title_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 64)
     except:
         font = ImageFont.load_default()
+        label_font = font
         title_font = font
 
     # Dessin sur la carte
@@ -60,23 +62,33 @@ if st.button("✨ Générer fiche"):
     title_text = "FICHE TOURNAGE"
     bbox = card_draw.textbbox((0, 0), title_text, font=title_font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    card_draw.text(((card.width - tw) // 2, 40), title_text, font=title_font, fill="black")
+    card_draw.text(((card.width - tw) // 2, 60), title_text, font=title_font, fill="black")
 
-    # Ligne de séparation
-    card_draw.line((80, 120, card.width - 80, 120), fill="#cccccc", width=3)
+    # Ligne fine
+    card_draw.line((100, 160, card.width - 100, 160), fill="#e0e0e0", width=2)
 
     # --- Contenu ---
-    y = 160
-    for icon_file, texte in lignes:
+    y = 220
+    for icon_file, label, valeur in lignes:
         path = icon_path(icon_file)
+
+        # Icône
         if os.path.exists(path):
             try:
-                icon = Image.open(path).convert("RGBA").resize((48, 48))
-                card.paste(icon, (80, y), mask=icon)
+                icon = Image.open(path).convert("RGBA").resize((50, 50))
+                card.paste(icon, (100, y), mask=icon)
             except Exception as e:
                 st.write(f"❌ Erreur icône {icon_file} : {e}")
-        card_draw.text((150, y + 8), texte, font=font, fill="black")
-        y += 90
+
+        # Label en gras
+        card_draw.text((180, y), f"{label} :", font=label_font, fill="black")
+
+        # Valeur en regular
+        if valeur:
+            lw = card_draw.textlength(f"{label} :", font=label_font)
+            card_draw.text((180 + lw + 15, y), valeur, font=font, fill="black")
+
+        y += 100  # plus d’espace entre chaque bloc
 
     # --- Coller la carte sur le fond ---
     img.paste(card, (card_x0, card_y0))
@@ -87,7 +99,7 @@ if st.button("✨ Générer fiche"):
     buffer.seek(0)
 
     # Affichage et téléchargement
-    st.image(img, caption="Aperçu fiche")
+    st.image(img, caption="Aperçu fiche (style Apple)")
     st.download_button(
         "📥 Télécharger la fiche en PNG",
         buffer,

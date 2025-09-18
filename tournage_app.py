@@ -1,5 +1,7 @@
 import streamlit as st
-from fpdf import FPDF
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from io import BytesIO
 
 st.title("📋 Générateur de fiche tournage")
 
@@ -26,22 +28,35 @@ if st.button("Générer fiche"):
     📍 **Lieu** : {lieu}  
     ⏱ **Horaires estimés** : {horaires}  
     """)
-    
-    # Export PDF (facultatif)
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, f"Nom du tournage : {nom}")
-    pdf.multi_cell(0, 10, f"Prod : {prod}")
-    pdf.multi_cell(0, 10, f"Client : {client}")
-    pdf.multi_cell(0, 10, f"Description : {description}")
-    pdf.multi_cell(0, 10, f"Poste : {poste}")
-    pdf.multi_cell(0, 10, f"Rémunération : {remu}")
-    pdf.multi_cell(0, 10, f"Dates de tournage : {date}")
-    pdf.multi_cell(0, 10, f"Lieu : {lieu}")
-    pdf.multi_cell(0, 10, f"Horaires estimés : {horaires}")
-    pdf_output = "fiche_tournage.pdf"
-    pdf.output(pdf_output)
 
-    with open(pdf_output, "rb") as f:
-        st.download_button("📥 Télécharger la fiche en PDF", f, file_name=pdf_output)
+    # Création PDF avec ReportLab
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    c.setFont("Helvetica", 12)
+
+    lignes = [
+        f"🎬 Nom du tournage : {nom}",
+        f"🏢 Prod : {prod}",
+        f"👤 Client : {client}",
+        f"📝 Description : {description}",
+        f"🎥 Poste : {poste}",
+        f"💶 Rémunération : {remu}",
+        f"📅 Dates de tournage : {date}",
+        f"📍 Lieu : {lieu}",
+        f"⏱ Horaires estimés : {horaires}"
+    ]
+
+    y = 800
+    for ligne in lignes:
+        c.drawString(50, y, ligne)
+        y -= 20
+
+    c.save()
+    buffer.seek(0)
+
+    st.download_button(
+        "📥 Télécharger la fiche en PDF",
+        buffer,
+        file_name="fiche_tournage.pdf",
+        mime="application/pdf"
+    )

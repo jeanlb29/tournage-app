@@ -5,8 +5,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
 
-# Charger la police emoji
-pdfmetrics.registerFont(TTFont("Emoji", "NotoColorEmoji.ttf"))
+# Charger la police emoji (fichier présent dans ton repo)
+pdfmetrics.registerFont(TTFont("Emoji", "NotoColorEmoji-Regular.ttf"))
 
 st.title("📋 Générateur de fiche tournage")
 
@@ -34,7 +34,7 @@ if st.button("Générer fiche"):
     ⏱ **Horaires estimés** : {horaires}  
     """)
 
-    # Création PDF
+    # Création PDF avec emojis
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     c.setFont("Emoji", 12)

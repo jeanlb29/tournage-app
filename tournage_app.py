@@ -1,7 +1,12 @@
 import streamlit as st
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
+
+# Charger la police emoji
+pdfmetrics.registerFont(TTFont("Emoji", "NotoColorEmoji.ttf"))
 
 st.title("📋 Générateur de fiche tournage")
 
@@ -29,10 +34,10 @@ if st.button("Générer fiche"):
     ⏱ **Horaires estimés** : {horaires}  
     """)
 
-    # Création PDF avec ReportLab
+    # Création PDF
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
-    c.setFont("Helvetica", 12)
+    c.setFont("Emoji", 12)
 
     lignes = [
         f"🎬 Nom du tournage : {nom}",

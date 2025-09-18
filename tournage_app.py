@@ -58,7 +58,8 @@ if st.button("✨ Générer fiche"):
 
     # --- Titre ---
     title_text = "FICHE TOURNAGE"
-    tw, th = card_draw.textsize(title_text, font=title_font)
+    bbox = card_draw.textbbox((0, 0), title_text, font=title_font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
     card_draw.text(((card.width - tw) // 2, 40), title_text, font=title_font, fill="black")
 
     # Ligne de séparation

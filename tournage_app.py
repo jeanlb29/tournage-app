@@ -49,17 +49,21 @@ if st.button("Générer fiche"):
     draw.text((300, 40), "FICHE TOURNAGE", font=title_font, fill="black")
 
     # Lignes
-    y = 120
-    for icon_file, texte in lignes:
-        path = icon_path(icon_file)
-        if os.path.exists(path):
-            try:
-                icon = Image.open(path).resize((36, 36)).convert("RGBA")
-                img.paste(icon, (80, y), mask=icon.split()[3])  # applique bien la transparence
-            except Exception as e:
-                st.write(f"Erreur ouverture {icon_file} : {e}")
-        draw.text((140, y), texte, font=font, fill="black")
-        y += 80
+  y = 120
+for icon_file, texte in lignes:
+    path = icon_path(icon_file)
+    if os.path.exists(path):
+        st.write(f"✅ Ajout icône : {icon_file}")  # Debug
+        try:
+            icon = Image.open(path).convert("RGBA").resize((36, 36))
+            img.paste(icon, (80, y), mask=icon)  # colle avec transparence
+        except Exception as e:
+            st.write(f"❌ Erreur ouverture {icon_file} : {e}")
+    else:
+        st.write(f"⚠️ Fichier introuvable : {icon_file}")
+    draw.text((140, y), texte, font=font, fill="black")
+    y += 80
+
 
     # Sauvegarde
     buffer = BytesIO()

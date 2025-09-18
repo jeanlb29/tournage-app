@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import os
 
+# Base directory pour localiser les icônes
 BASE_DIR = os.path.dirname(__file__)
 
 def icon_path(name):
@@ -22,6 +23,7 @@ lieu = st.text_input("Lieu")
 horaires = st.text_input("Horaires estimés")
 
 if st.button("Générer fiche"):
+    # Lignes avec icônes
     lignes = [
         ("clapper.png", f"Nom du tournage : {nom}"),
         ("building.png", f"Prod : {prod}"),
@@ -38,23 +40,34 @@ if st.button("Générer fiche"):
     img = Image.new("RGB", (1000, 1200), "white")
     draw = ImageDraw.Draw(img)
 
+    # Police
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", 36)
     except:
         font = ImageFont.load_default()
 
+    # Titre
+    draw.text((400, 40), "📋 Fiche Tournage", font=font, fill="black")
+
+    # Écrire chaque ligne avec l’icône
     y = 120
     for icon_file, texte in lignes:
-        icon = Image.open(icon_path(icon_file)).resize((36, 36))
-        img.paste(icon, (80, y), mask=icon)  # coller emoji
+        path = icon_path(icon_file)
+        if os.path.exists(path):
+            try:
+                icon = Image.open(path).resize((36, 36))
+                img.paste(icon, (80, y), mask=icon)  # colle l’emoji
+            except Exception as e:
+                st.write(f"Erreur ouverture {icon_file} : {e}")
         draw.text((140, y), texte, font=font, fill="black")
         y += 80
 
-    # Sauvegarde
+    # Sauvegarde en mémoire
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
 
+    # Affichage + download
     st.image(img, caption="Aperçu fiche")
     st.download_button(
         "📥 Télécharger la fiche en PNG",

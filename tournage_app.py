@@ -1,6 +1,12 @@
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+
+def icon_path(name):
+    return os.path.join(BASE_DIR, "icons", name)
 
 st.title("📋 Générateur de fiche tournage (PNG)")
 
@@ -16,35 +22,35 @@ lieu = st.text_input("Lieu")
 horaires = st.text_input("Horaires estimés")
 
 if st.button("Générer fiche"):
-    # Texte à afficher
     lignes = [
-        f"🎬 Nom du tournage : {nom}",
-        f"🏢 Prod : {prod}",
-        f"👤 Client : {client}",
-        f"📝 Description : {description}",
-        f"🎥 Poste : {poste}",
-        f"💶 Rémunération : {remu}",
-        f"📅 Dates de tournage : {date}",
-        f"📍 Lieu : {lieu}",
-        f"⏱ Horaires estimés : {horaires}"
+        ("clapper.png", f"Nom du tournage : {nom}"),
+        ("building.png", f"Prod : {prod}"),
+        ("person.png", f"Client : {client}"),
+        ("page.png", f"Description : {description}"),
+        ("camera.png", f"Poste : {poste}"),
+        ("money.png", f"Rémunération : {remu}"),
+        ("calendar.png", f"Dates de tournage : {date}"),
+        ("pin.png", f"Lieu : {lieu}"),
+        ("clock.png", f"Horaires estimés : {horaires}")
     ]
 
     # Création image blanche
-    img = Image.new("RGB", (800, 1000), "white")
+    img = Image.new("RGB", (1000, 1200), "white")
     draw = ImageDraw.Draw(img)
 
-    # Police (Arial ou DejaVu si dispo sur ton Streamlit Cloud)
     try:
-        font = ImageFont.truetype("DejaVuSans.ttf", 28)
+        font = ImageFont.truetype("DejaVuSans.ttf", 36)
     except:
         font = ImageFont.load_default()
 
-    y = 100
-    for ligne in lignes:
-        draw.text((80, y), ligne, font=font, fill="black")
-        y += 60
+    y = 120
+    for icon_file, texte in lignes:
+        icon = Image.open(icon_path(icon_file)).resize((36, 36))
+        img.paste(icon, (80, y), mask=icon)  # coller emoji
+        draw.text((140, y), texte, font=font, fill="black")
+        y += 80
 
-    # Sauvegarde en mémoire
+    # Sauvegarde
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)

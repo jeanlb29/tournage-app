@@ -1,66 +1,51 @@
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
-from io import BytesIO
+import io
 import os
 
-BASE_DIR = os.path.dirname(__file__)
+# --- Configuration police ---
+FONT_PATH_REGULAR = "fonts/Montserrat-Regular.ttf"
+FONT_PATH_BOLD = "fonts/Montserrat-Bold.ttf"
 
+# --- Configuration icons ---
 def icon_path(name):
-    return os.path.join(BASE_DIR, "icons", name)
+    return os.path.join("icons", name)
 
-st.title("📋 Générateur de fiche tournage (PNG)")
-
-# --- Formulaire ---
-nom = st.text_input("Nom du tournage")
-prod = st.text_input("Production")
-client = st.text_input("Client")
-description = st.text_area("Description")
-poste = st.text_input("Poste")
-remu = st.text_input("Rémunération")
-date = st.text_input("Dates de tournage")
-lieu = st.text_input("Lieu")
-horaires = st.text_input("Horaires estimés")
-
-if st.button("✨ Générer fiche"):
-    lignes = [
-        ("clapper.png", "Nom du tournage", nom),
-        ("building.png", "Prod", prod),
-        ("person.png", "Client", client),
-        ("page.png", "Description", description),
-        ("camera.png", "Poste", poste),
-        ("money.png", "Rémunération", remu),
-        ("calendar.png", "Dates de tournage", date),
-        ("pin.png", "Lieu", lieu),
-        ("clock.png", "Horaires estimés", horaires)
-    ]
-
-    # --- Dimensions image ---
+# --- Génération de la fiche en PNG ---
+def generate_card(data):
     width, height = 1240, 1754  # format A4 vertical
-    img = Image.new("RGB", (width, height), "#f5f5f7")  # fond gris clair
+    bg_color = (245, 245, 245)  # gris clair style Apple
+    img = Image.new("RGB", (width, height), bg_color)
     draw = ImageDraw.Draw(img)
 
-    # Police Montserrat
-    try:
-        font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Regular.ttf"), 42)
-        label_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 42)
-        title_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 78)
-    except:
-        font = ImageFont.load_default()
-        label_font = font
-        title_font = font
+    # Fonts
+    title_font = ImageFont.truetype(FONT_PATH_BOLD, 90)
+    label_font = ImageFont.truetype(FONT_PATH_BOLD, 55)
+    font = ImageFont.truetype(FONT_PATH_REGULAR, 55)
 
     # --- Titre ---
     title_text = "FICHE TOURNAGE"
-    bbox = draw.textbbox((0, 0), title_text, font=title_font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text(((width - tw) // 2, 120), title_text, font=title_font, fill="black")
+    tw, th = draw.textbbox((0, 0), title_text, font=title_font)[2:]
+    draw.text(((width - tw) / 2, 100), title_text, font=title_font, fill="black")
 
-    # Ligne fine
-    draw.line((150, 240, width - 150, 240), fill="#d1d1d6", width=3)
+    # Ligne sous le titre
+    draw.line([(150, 220), (width - 150, 220)], fill=(200, 200, 200), width=4)
 
     # --- Contenu ---
+    lignes = [
+        ("clapper.png", "Nom du tournage", data.get("nom", "")),
+        ("building.png", "Prod", data.get("prod", "")),
+        ("person.png", "Client", data.get("client", "")),
+        ("page.png", "Description", data.get("description", "")),
+        ("camera.png", "Poste", data.get("poste", "")),
+        ("money.png", "Rémunération", data.get("remuneration", "")),
+        ("calendar.png", "Dates de tournage", data.get("dates", "")),
+        ("pin.png", "Lieu", data.get("lieu", "")),
+        ("clock.png", "Horaires estimés", data.get("horaires", "")),
+    ]
+
     y = 320
-    max_width = width - 300  # largeur max pour le texte
+    max_width = width - 300  # zone max pour texte
 
     for icon_file, label, valeur in lignes:
         path = icon_path(icon_file)
@@ -76,13 +61,14 @@ if st.button("✨ Générer fiche"):
         # Label en gras
         draw.text((240, y), f"{label} :", font=label_font, fill="black")
 
-        # Valeur → texte multiline si trop long
-        if valeur:
-            lw = draw.textlength(f"{label} :", font=label_font)
-            text_x = 240 + lw + 20
-            text_y = y
+        # Position texte valeur
+        lw = draw.textlength(f"{label} :", font=label_font)
+        text_x = 240 + lw + 20
+        text_y = y
 
-            # découpe auto en lignes
+        # Découpe multi-lignes si nécessaire
+        line_height = 0
+        if valeur:
             words = valeur.split()
             line = ""
             for word in words:
@@ -91,22 +77,58 @@ if st.button("✨ Générer fiche"):
                     line = test_line
                 else:
                     draw.text((text_x, text_y), line, font=font, fill="black")
-                    text_y += 60
+                    text_y += 65  # espace entre lignes
                     line = word + " "
             draw.text((text_x, text_y), line, font=font, fill="black")
+            line_height = text_y - y + 80
+        else:
+            line_height = 100
 
-        y += 120  # espace plus grand entre les blocs
+        # Décalage dynamique
+        y += line_height
 
-    # --- Export ---
-    buffer = BytesIO()
+    # Sauvegarde en mémoire
+    buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
+    return buffer
 
-    # Affichage et téléchargement
-    st.image(img, caption="Aperçu fiche (style Apple)")
+
+# --- App Streamlit ---
+st.title("🎬 Générateur de Fiche Tournage")
+
+with st.form("fiche_form"):
+    nom = st.text_input("Nom du tournage")
+    prod = st.text_input("Prod")
+    client = st.text_input("Client")
+    description = st.text_area("Description")
+    poste = st.text_input("Poste")
+    remuneration = st.text_input("Rémunération")
+    dates = st.text_input("Dates de tournage")
+    lieu = st.text_input("Lieu")
+    horaires = st.text_input("Horaires estimés")
+
+    submitted = st.form_submit_button("Générer fiche")
+
+if submitted:
+    data = {
+        "nom": nom,
+        "prod": prod,
+        "client": client,
+        "description": description,
+        "poste": poste,
+        "remuneration": remuneration,
+        "dates": dates,
+        "lieu": lieu,
+        "horaires": horaires,
+    }
+
+    image_bytes = generate_card(data)
+
+    st.image(image_bytes, caption="Aperçu de la fiche", use_column_width=True)
     st.download_button(
-        "📥 Télécharger la fiche en PNG",
-        buffer,
+        label="📥 Télécharger la fiche (PNG)",
+        data=image_bytes,
         file_name="fiche_tournage.png",
-        mime="image/png"
+        mime="image/png",
     )

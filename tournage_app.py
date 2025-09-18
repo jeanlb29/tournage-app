@@ -2,6 +2,7 @@ import streamlit as st
 from fpdf import FPDF
 from PIL import Image, ImageDraw, ImageFont
 import io
+import os
 
 st.set_page_config(page_title="Fiche Tournage", page_icon="🎬", layout="centered")
 
@@ -30,9 +31,17 @@ with st.form("tournage_form"):
 def generate_pdf():
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
 
-    pdf.cell(200, 10, "Fiche tournage", ln=True, align="C")
+    # Ajout police Unicode (DejaVuSans disponible par défaut sur beaucoup de serveurs Linux)
+    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    if os.path.exists(font_path):
+        pdf.add_font("DejaVu", "", font_path, uni=True)
+        pdf.set_font("DejaVu", size=12)
+    else:
+        # fallback si police absente
+        pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, "🎬 Fiche tournage", ln=True, align="C")
     pdf.ln(10)
 
     infos = [
@@ -52,7 +61,8 @@ def generate_pdf():
     ]
 
     for label, value in infos:
-        pdf.multi_cell(0, 10, f"{label} : {value}")
+        if value:  # éviter les None
+            pdf.multi_cell(0, 10, f"{label} : {value}")
 
     return pdf.output(dest="S").encode("latin1")
 
@@ -97,8 +107,3 @@ if submitted:
 
     with col1:
         pdf_bytes = generate_pdf()
-        st.download_button("📥 Télécharger PDF", data=pdf_bytes, file_name="fiche_tournage.pdf", mime="application/pdf")
-
-    with col2:
-        png_bytes = generate_png()
-        st.download_button("🖼 Télécharger PNG", data=png_bytes, file_name="fiche_tournage.png", mime="image/png")

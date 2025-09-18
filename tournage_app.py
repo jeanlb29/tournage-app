@@ -35,63 +35,67 @@ if st.button("✨ Générer fiche"):
     ]
 
     # --- Dimensions image ---
-    width, height = 1080, 1400
-    img = Image.new("RGB", (width, height), "#f5f5f7")  # fond Apple gris clair
+    width, height = 1240, 1754  # format A4 vertical
+    img = Image.new("RGB", (width, height), "#f5f5f7")  # fond gris clair
     draw = ImageDraw.Draw(img)
-
-    # --- Carte blanche ---
-    margin = 80
-    card_x0, card_y0 = margin, margin
-    card_x1, card_y1 = width - margin, height - margin
-    card = Image.new("RGB", (card_x1 - card_x0, card_y1 - card_y0), "white")
 
     # Police Montserrat
     try:
-        font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Regular.ttf"), 38)
-        label_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 38)
-        title_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 64)
+        font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Regular.ttf"), 42)
+        label_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 42)
+        title_font = ImageFont.truetype(os.path.join(BASE_DIR, "fonts", "Montserrat-Bold.ttf"), 78)
     except:
         font = ImageFont.load_default()
         label_font = font
         title_font = font
 
-    # Dessin sur la carte
-    card_draw = ImageDraw.Draw(card)
-
     # --- Titre ---
     title_text = "FICHE TOURNAGE"
-    bbox = card_draw.textbbox((0, 0), title_text, font=title_font)
+    bbox = draw.textbbox((0, 0), title_text, font=title_font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    card_draw.text(((card.width - tw) // 2, 60), title_text, font=title_font, fill="black")
+    draw.text(((width - tw) // 2, 120), title_text, font=title_font, fill="black")
 
     # Ligne fine
-    card_draw.line((100, 160, card.width - 100, 160), fill="#e0e0e0", width=2)
+    draw.line((150, 240, width - 150, 240), fill="#d1d1d6", width=3)
 
     # --- Contenu ---
-    y = 220
+    y = 320
+    max_width = width - 300  # largeur max pour le texte
+
     for icon_file, label, valeur in lignes:
         path = icon_path(icon_file)
 
         # Icône
         if os.path.exists(path):
             try:
-                icon = Image.open(path).convert("RGBA").resize((50, 50))
-                card.paste(icon, (100, y), mask=icon)
+                icon = Image.open(path).convert("RGBA").resize((60, 60))
+                img.paste(icon, (150, y), mask=icon)
             except Exception as e:
                 st.write(f"❌ Erreur icône {icon_file} : {e}")
 
         # Label en gras
-        card_draw.text((180, y), f"{label} :", font=label_font, fill="black")
+        draw.text((240, y), f"{label} :", font=label_font, fill="black")
 
-        # Valeur en regular
+        # Valeur → texte multiline si trop long
         if valeur:
-            lw = card_draw.textlength(f"{label} :", font=label_font)
-            card_draw.text((180 + lw + 15, y), valeur, font=font, fill="black")
+            lw = draw.textlength(f"{label} :", font=label_font)
+            text_x = 240 + lw + 20
+            text_y = y
 
-        y += 100  # plus d’espace entre chaque bloc
+            # découpe auto en lignes
+            words = valeur.split()
+            line = ""
+            for word in words:
+                test_line = line + word + " "
+                if draw.textlength(test_line, font=font) < (max_width - text_x):
+                    line = test_line
+                else:
+                    draw.text((text_x, text_y), line, font=font, fill="black")
+                    text_y += 60
+                    line = word + " "
+            draw.text((text_x, text_y), line, font=font, fill="black")
 
-    # --- Coller la carte sur le fond ---
-    img.paste(card, (card_x0, card_y0))
+        y += 120  # espace plus grand entre les blocs
 
     # --- Export ---
     buffer = BytesIO()

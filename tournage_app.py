@@ -14,30 +14,27 @@ def icon_path(name):
 # --- Génération de la fiche en PNG ---
 def generate_card(data):
     width, height = 1240, 1754  # A4 vertical
-    bg_color = (245, 245, 245)  # fond gris clair Apple
+    bg_color = (255, 255, 255)  # fond blanc pur
     img = Image.new("RGB", (width, height), bg_color)
     draw = ImageDraw.Draw(img)
 
     # Fonts
-    title_font = ImageFont.truetype(FONT_PATH_BOLD, 95)
-    label_font = ImageFont.truetype(FONT_PATH_BOLD, 55)
-    font = ImageFont.truetype(FONT_PATH_REGULAR, 55)
+    title_font = ImageFont.truetype(FONT_PATH_BOLD, 90)
+    label_font = ImageFont.truetype(FONT_PATH_BOLD, 50)
+    font = ImageFont.truetype(FONT_PATH_REGULAR, 50)
 
-    # --- Carte blanche au centre ---
-    margin = 100
-    card = (margin, margin, width - margin, height - margin)
-    draw.rounded_rectangle(card, radius=40, fill="white", outline=None)
-
-    # Zone de dessin dans la carte
-    content_width = width - 2 * margin - 100
+    # --- Marges globales ---
+    margin = 120
+    content_width = width - 2 * margin
 
     # --- Titre ---
     title_text = "FICHE TOURNAGE"
     tw, th = draw.textbbox((0, 0), title_text, font=title_font)[2:]
-    draw.text(((width - tw) / 2, margin + 60), title_text, font=title_font, fill="black")
+    draw.text(((width - tw) / 2, margin), title_text, font=title_font, fill="black")
 
-    # Ligne sous titre
-    draw.line([(margin + 80, margin + 200), (width - margin - 80, margin + 200)], fill=(220, 220, 220), width=4)
+    # Ligne fine sous le titre
+    line_y = margin + 120
+    draw.line([(margin, line_y), (width - margin, line_y)], fill=(220, 220, 220), width=3)
 
     # --- Contenu ---
     lignes = [
@@ -52,31 +49,30 @@ def generate_card(data):
         ("clock.png", "Horaires estimés", data.get("horaires", "")),
     ]
 
-    y = margin + 280  # départ après le titre
-    x_start = margin + 100
+    y = line_y + 100  # départ après la ligne
 
     for icon_file, label, valeur in lignes:
         # Icône
         path = icon_path(icon_file)
         if os.path.exists(path):
             try:
-                icon = Image.open(path).convert("RGBA").resize((60, 60))
-                img.paste(icon, (x_start, y), mask=icon)
+                icon = Image.open(path).convert("RGBA").resize((50, 50))
+                img.paste(icon, (margin, y), mask=icon)
             except Exception as e:
                 st.write(f"⚠️ Erreur icône {icon_file} : {e}")
 
-        # Label
-        draw.text((x_start + 90, y), f"{label} :", font=label_font, fill="black")
+        # Label (gris foncé, bold)
+        draw.text((margin + 70, y), f"{label} :", font=label_font, fill="#333333")
 
-        # Position du texte
+        # Position valeur
         lw = draw.textlength(f"{label} :", font=label_font)
-        text_x = x_start + 90 + lw + 20
+        text_x = margin + 70 + lw + 25
         text_y = y
 
         # Largeur max plus grande
-        max_width = content_width - (text_x - margin)
+        max_width = width - margin - text_x
 
-        # Gestion multi-lignes
+        # Multi-lignes
         if valeur:
             words = valeur.split()
             line = ""
@@ -86,12 +82,12 @@ def generate_card(data):
                     line = test_line
                 else:
                     draw.text((text_x, text_y), line, font=font, fill="black")
-                    text_y += 70
+                    text_y += 65
                     line = word + " "
             draw.text((text_x, text_y), line, font=font, fill="black")
-            y = text_y + 100
+            y = text_y + 90
         else:
-            y += 100
+            y += 90
 
     # Sauvegarde
     buffer = io.BytesIO()

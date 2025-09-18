@@ -1,3 +1,18 @@
+import streamlit as st
+from PIL import Image, ImageDraw, ImageFont
+import io
+import os
+
+# --- Police Montserrat ---
+FONT_PATH_REGULAR = "fonts/Montserrat-Regular.ttf"
+FONT_PATH_BOLD = "fonts/Montserrat-Bold.ttf"
+
+# --- Dossier icônes ---
+ICON_DIR = "icons"
+
+def icon_path(filename):
+    return os.path.join(ICON_DIR, filename)
+
 def generate_card(data):
     # A4 horizontal
     width, height = 1754, 1240  
@@ -62,3 +77,39 @@ def generate_card(data):
     img.save(buffer, format="PNG")
     buffer.seek(0)
     return buffer
+
+# --- Streamlit UI ---
+st.title("🎬 Générateur de Fiche Tournage")
+
+with st.form("tournage_form"):
+    nom = st.text_input("Nom du tournage")
+    prod = st.text_input("Prod")
+    client = st.text_input("Client")
+    description = st.text_area("Description")
+    poste = st.text_input("Poste")
+    remuneration = st.text_input("Rémunération")
+    dates = st.text_input("Dates de tournage")
+    lieu = st.text_input("Lieu")
+    horaires = st.text_input("Horaires estimés")
+    submitted = st.form_submit_button("Générer fiche")
+
+if submitted:
+    data = {
+        "nom": nom,
+        "prod": prod,
+        "client": client,
+        "description": description,
+        "poste": poste,
+        "remuneration": remuneration,
+        "dates": dates,
+        "lieu": lieu,
+        "horaires": horaires,
+    }
+    buffer = generate_card(data)
+    st.image(buffer, caption="Aperçu de la fiche", use_container_width=True)
+    st.download_button(
+        label="📥 Télécharger la fiche",
+        data=buffer,
+        file_name="fiche_tournage.png",
+        mime="image/png"
+    )
